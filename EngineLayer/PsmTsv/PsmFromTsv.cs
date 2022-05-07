@@ -343,9 +343,9 @@ namespace EngineLayer
         {
             List<MatchedFragmentIon> variantCrossingIons = new List<MatchedFragmentIon>();
 
-            if (StartAndEndResiduesInProtein != null && IdentifiedSequenceVariations != null)
+            if (StartResidueInProtein != null && EndResidueInProtein != null && IdentifiedSequenceVariations != null)
             {
-                Match positionMatch = PositionParser.Match(StartAndEndResiduesInProtein);
+                Match positionMatch = PositionParser.Match(StartResidueInProtein + ", " + EndResidueInProtein);
                 Match variantMatch = VariantParser.Match(IdentifiedSequenceVariations);
                 if (positionMatch.Success && variantMatch.Success)
                 {
