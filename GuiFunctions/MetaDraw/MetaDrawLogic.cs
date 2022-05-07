@@ -287,7 +287,7 @@ namespace GuiFunctions
                 else
                 {
                     DrawHorizontalLine(peptideLength - cProduct.NeutralTheoreticalProduct.FragmentNumber, peptideLength, map, heightForThisFragment, cColor, spacing);
-                    cIntensityArray[peptideLength - cProduct.NeutralTheoreticalProduct.FragmentNumber - 1] += cProduct.Intensity;
+                    cIntensityArray[peptideLength - cProduct.NeutralTheoreticalProduct.FragmentNumber] += cProduct.Intensity;
                     c++;
                 }
                 heightForThisFragment += heightIncrement;

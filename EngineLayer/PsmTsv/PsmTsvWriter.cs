@@ -230,7 +230,7 @@ namespace EngineLayer
             s[PsmTsvHeader.StartResidueInProtein] = pepWithModsIsNull ? " " :
                 Resolve(pepsWithMods.Select(b => b.OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture))).ResolvedString;
             s[PsmTsvHeader.EndResidueInProtein] = pepWithModsIsNull ? " " :
-                Resolve(pepsWithMods.Select(b => b.OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture))).ResolvedString;
+                Resolve(pepsWithMods.Select(b => b.OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture))).ResolvedString;
             s[PsmTsvHeader.PreviousAminoAcid] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.PreviousAminoAcid.ToString())).ResolvedString;
             s[PsmTsvHeader.NextAminoAcid] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.NextAminoAcid.ToString())).ResolvedString;
 
