@@ -226,8 +226,11 @@ namespace EngineLayer
             s[PsmTsvHeader.Contaminant] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.IsContaminant ? "Y" : "N")).ResolvedString;
             s[PsmTsvHeader.Decoy] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.IsDecoy ? "Y" : "N")).ResolvedString;
             s[PsmTsvHeader.PeptideDesicription] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.PeptideDescription)).ResolvedString;
-            s[PsmTsvHeader.StartAndEndResiduesInProtein] = pepWithModsIsNull ? " " :
-                Resolve(pepsWithMods.Select(b => ($"[{b.OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture)} to {b.OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture)}]")), psm.FullSequence).ResolvedString;
+            // Editing Start and End Residues in Protein to create two numeric columns
+            s[PsmTsvHeader.StartResidueInProtein] = pepWithModsIsNull ? " " :
+                Resolve(pepsWithMods.Select(b => b.OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture))).ResolvedString;
+            s[PsmTsvHeader.EndResidueInProtein] = pepWithModsIsNull ? " " :
+                Resolve(pepsWithMods.Select(b => b.OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture))).ResolvedString;
             s[PsmTsvHeader.PreviousAminoAcid] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.PreviousAminoAcid.ToString())).ResolvedString;
             s[PsmTsvHeader.NextAminoAcid] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.NextAminoAcid.ToString())).ResolvedString;
 

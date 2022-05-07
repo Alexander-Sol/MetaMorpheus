@@ -40,7 +40,8 @@
         public const string Contaminant = "Contaminant";
         public const string Decoy = "Decoy";
         public const string PeptideDesicription = "Peptide Description";
-        public const string StartAndEndResiduesInProtein = "Start and End Residues In Protein";
+        public const string StartResidueInProtein = "Start Residue In Protein"; // Edited 
+        public const string EndResidueInProtein = "End Residue In Protein"; //Edited
         public const string PreviousAminoAcid = "Previous Amino Acid";
         public const string NextAminoAcid = "Next Amino Acid";
         public const string TheoreticalsSearched = "Theoreticals Searched";
