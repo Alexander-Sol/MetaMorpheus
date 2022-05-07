@@ -91,7 +91,8 @@ namespace EngineLayer
             parsedHeader.Add(PsmTsvHeader.IdentifiedSequenceVariations, Array.IndexOf(spl, PsmTsvHeader.IdentifiedSequenceVariations));
             parsedHeader.Add(PsmTsvHeader.SpliceSites, Array.IndexOf(spl, PsmTsvHeader.SpliceSites));
             parsedHeader.Add(PsmTsvHeader.PeptideDesicription, Array.IndexOf(spl, PsmTsvHeader.PeptideDesicription));
-            parsedHeader.Add(PsmTsvHeader.StartAndEndResiduesInProtein, Array.IndexOf(spl, PsmTsvHeader.StartAndEndResiduesInProtein));
+            parsedHeader.Add(PsmTsvHeader.StartResidueInProtein, Array.IndexOf(spl, PsmTsvHeader.StartResidueInProtein));
+            parsedHeader.Add(PsmTsvHeader.EndResidueInProtein, Array.IndexOf(spl, PsmTsvHeader.EndResidueInProtein));
             parsedHeader.Add(PsmTsvHeader.PreviousAminoAcid, Array.IndexOf(spl, PsmTsvHeader.PreviousAminoAcid));
             parsedHeader.Add(PsmTsvHeader.NextAminoAcid, Array.IndexOf(spl, PsmTsvHeader.NextAminoAcid));
             parsedHeader.Add(PsmTsvHeader.DecoyContaminantTarget, Array.IndexOf(spl, PsmTsvHeader.DecoyContaminantTarget));

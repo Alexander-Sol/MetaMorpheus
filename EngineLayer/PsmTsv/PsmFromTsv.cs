@@ -50,7 +50,8 @@ namespace EngineLayer
         public string IdentifiedSequenceVariations { get; }
         public string SpliceSites { get; }
         public string PeptideDescription { get; }
-        public string StartAndEndResiduesInProtein { get; }
+        public string StartResidueInProtein { get; }
+        public string EndResidueInProtein { get; }
         public string PreviousAminoAcid { get; }
         public string NextAminoAcid { get; }
         public string DecoyContamTarget { get; }
@@ -140,7 +141,9 @@ namespace EngineLayer
             IdentifiedSequenceVariations = (parsedHeader[PsmTsvHeader.IdentifiedSequenceVariations] < 0) ? null : spl[parsedHeader[PsmTsvHeader.IdentifiedSequenceVariations]].Trim();
             SpliceSites = (parsedHeader[PsmTsvHeader.SpliceSites] < 0) ? null : spl[parsedHeader[PsmTsvHeader.SpliceSites]].Trim();
             PeptideDescription = (parsedHeader[PsmTsvHeader.PeptideDesicription] < 0) ? null : spl[parsedHeader[PsmTsvHeader.PeptideDesicription]].Trim();
-            StartAndEndResiduesInProtein = (parsedHeader[PsmTsvHeader.StartAndEndResiduesInProtein] < 0) ? null : spl[parsedHeader[PsmTsvHeader.StartAndEndResiduesInProtein]].Trim();
+            // Edited to accept numeric columns for start/end residues
+            StartResidueInProtein = (parsedHeader[PsmTsvHeader.StartResidueInProtein] < 0) ? null : spl[parsedHeader[PsmTsvHeader.StartResidueInProtein]].Trim();
+            EndResidueInProtein = (parsedHeader[PsmTsvHeader.EndResidueInProtein] < 0) ? null : spl[parsedHeader[PsmTsvHeader.EndResidueInProtein]].Trim();
             PreviousAminoAcid = (parsedHeader[PsmTsvHeader.PreviousAminoAcid] < 0) ? null : spl[parsedHeader[PsmTsvHeader.PreviousAminoAcid]].Trim();
             NextAminoAcid = (parsedHeader[PsmTsvHeader.NextAminoAcid] < 0) ? null : spl[parsedHeader[PsmTsvHeader.NextAminoAcid]].Trim();
             QValueNotch = (parsedHeader[PsmTsvHeader.QValueNotch] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader.QValueNotch]].Trim(), CultureInfo.InvariantCulture);
