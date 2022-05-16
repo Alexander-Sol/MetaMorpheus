@@ -109,7 +109,7 @@ namespace Test
             Assert.AreEqual(0, psm.QValueNotch);
             Assert.AreEqual(77.09543, psm.RetentionTime);
             Assert.AreEqual(507.117, psm.Score);
-            Assert.AreEqual("[22 to 34]", psm.StartAndEndResiduesInProtein);
+            Assert.AreEqual(22, psm.StartResidueInProtein);
             Assert.AreEqual(2529786.92095, psm.TotalIonCurrent);
             Assert.AreEqual(0, psm.VariantCrossingIons.Count);
         }
