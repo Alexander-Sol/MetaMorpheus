@@ -23,7 +23,7 @@ namespace Test
     public static class
     MbrAnalysisTest
     {
-        /*[Test]
+        [Test]
         public static void MbrPostSearchAnalysisTest()
         {
             SearchTask classicSearch = new SearchTask()
@@ -47,11 +47,12 @@ namespace Test
                 },
                 CommonParameters = new CommonParameters()
             };
+
             List<int> counts = new List<int>();
             List<string> rawSlices = new List<string> { 
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrTestData\f1r1_sliced_mbr.raw"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrTestData\f1r2_sliced_mbr.raw") };
-            string fastaName = @"TestData\MbrTestData\MbrDataPrunedDB.fasta";
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\MbrTest_J3.mzML"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\MbrTest_K13.mzML") };
+            string fastaName = @"TestData\MbrAnalysisTest\HumanFastaSlice.fasta";
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMbrAnalysisOutput");
 
             var engine = new EverythingRunnerEngine(
@@ -64,7 +65,7 @@ namespace Test
             string classicPath = Path.Combine(outputFolder, @"ClassicSearch\AllPSMs.psmtsv");
             var classicPsms = File.ReadAllLines(classicPath).ToList();
 
-        }*/
+        }
 
         [Test]
         public static void MiniClassicSearchEngineTest()
