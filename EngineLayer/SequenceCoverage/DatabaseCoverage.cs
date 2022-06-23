@@ -22,8 +22,8 @@ namespace EngineLayer.SequenceCoverage
             ReadPsms = PsmTsvReader.ReadTsv(peptidePath, out var warnings);
             foreach (var protein in ProteinList)
             {
-                var proteinPeptides = ReadPsms.Where(p => p.ProteinAccession.Equals(protein.Accession));
-                CoverageDictionary.Add(protein, ProteinCoverage(protein, proteinPeptides));
+                var proteinPeptides = ReadPsms.Where(p => p.ProteinAccession.Equals(protein.Accession)).ToList();
+                CoverageDictionary.Add(protein, new ProteinCoverage(protein, proteinPeptides));
             }
         }
         protected List<Protein> LoadProteins(string databasePath)
