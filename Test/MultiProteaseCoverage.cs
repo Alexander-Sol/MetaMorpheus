@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using TaskLayer;
+using EngineLayer.SequenceCoverage;
 
 namespace Test
 {
@@ -20,6 +21,12 @@ namespace Test
         public static void MultiProteaseTest()
         {
             string psmFile = @"C:\Users\Alex\Desktop\MutantProteinSP2022\EnterolysinA\ProA_EThcD_Search\Task1-SearchTask\AllPeptides.psmtsv";
+            string databasePath = @"C:\Users\Alex\Desktop\MutantProteinSP2022\EnterolysinA\EntlA_Mutant.fasta";
+
+            DatabaseCoverage dbC = new DatabaseCoverage(databasePath, psmFile);
+
+
+
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
             Dictionary<string, List<PsmFromTsv>> peptidesByProtein = new Dictionary<string, List<PsmFromTsv>>();
             string[] uniqueProteins = parsedPsms.Select(p => p.ProteinAccession).Distinct().ToArray();

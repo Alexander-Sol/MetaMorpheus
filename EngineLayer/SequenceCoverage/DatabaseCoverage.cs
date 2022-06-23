@@ -10,11 +10,12 @@ using UsefulProteomicsDatabases;
 
 namespace EngineLayer.SequenceCoverage
 {
-    internal class DatabaseCoverage
+    public class DatabaseCoverage
     {
         public List<Protein> ProteinList { get; private set; }
         public List<PsmFromTsv> ReadPsms { get; private set; }
-        public Dictionary<Protein, ProteinCoverage> CoverageDictionary { get; private set; }
+        private Dictionary<Protein, ProteinCoverage> CoverageDictionary { get; set; }
+
 
         public DatabaseCoverage(string databasePath, string peptidePath)
         {
