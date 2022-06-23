@@ -104,4 +104,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="SequenceCoverage\" />
+  </ItemGroup>
+
 </Project>
