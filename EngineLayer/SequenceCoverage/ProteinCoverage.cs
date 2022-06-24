@@ -17,30 +17,82 @@ namespace EngineLayer.SequenceCoverage
         public bool[] PeptideCoverage { get; private set; }
         public bool[] FragmentCoverage { get; private set; }
         public int[] PepBondCoverage { get; private set; }
+        public Dictionary<string, ProteaseCoverage> ProteaseCoverageDict { get; private set; } //At some point, need to incorporate actual protease as the key for this dict
+        public float PepCoveragePercent { get; private set; }
+        public float FragmentCoveragePercent { get; private set; }
+
+        public static Dictionary<string, List<string>> proteaseAminoAcidPairs = new Dictionary<string, List<string>>
+        {
+            { "gluC", new List<string> { "E", "D", "M", "-"} },
+            { "proA", new List<string> { "P", "A", "M", "-"} },
+            { "trypsin", new List<string> { "K", "R", "M", "-"} },
+        };
+
         public ProteinCoverage(Protein protein, List<PsmFromTsv> readPsms )
         {
             Residues = protein.BaseSequence.ToCharArray();
             Protein = protein;
             PeptideCoverage = new bool[Protein.Length];     // An array representing every residue within a given protein
-            FragmentCoverage = new bool[Protein.Length];
             PepBondCoverage = new int[Protein.Length - 1]; // An array representing all the peptide bonds within a given protein
+            FragmentCoverage = new bool[Protein.Length];
+            ProteaseCoverageDict = new();
 
-            DeterminePeptideCoverage(PeptideCoverage, readPsms);
-            DeterminePepBondCoverage(PepBondCoverage, readPsms);
+            // This is a shitty manual work around. At some point, need to incorporate actual protease objects
+            // However, psmtsv don't store the protease used to generate the peptide. 
+            List<PsmFromTsv> gluCPsms = readPsms
+                .Where(p => proteaseAminoAcidPairs["gluC"].Contains(p.PreviousAminoAcid))
+                .ToList();
+            List<PsmFromTsv> proAPsms = readPsms
+                .Where(p => proteaseAminoAcidPairs["proA"].Contains(p.PreviousAminoAcid))
+                .ToList();
+            List<PsmFromTsv> trypsinPsms = readPsms
+                .Where(p => proteaseAminoAcidPairs["trypsin"].Contains(p.PreviousAminoAcid))
+                .ToList();
+
+            ProteaseCoverageDict.Add("gluC", new ProteaseCoverage("gluC", Protein, Residues, gluCPsms));
+            ProteaseCoverageDict.Add("proA", new ProteaseCoverage("proA", Protein, Residues, proAPsms));
+            ProteaseCoverageDict.Add("trypsin", new ProteaseCoverage("trypsin", Protein, Residues, trypsinPsms));
+
+            DetermineTotalPeptideCoverage(ProteaseCoverageDict, PeptideCoverage);
+            DetermineTotalPepBondCoverage(ProteaseCoverageDict, PepBondCoverage);
             DetermineFragmentCoverage(PepBondCoverage, FragmentCoverage);
-
+            CalculatePercentCoverage();
             var place = 0;
         }
 
-        public void DeterminePeptideCoverage(bool[] coverageArray, List<PsmFromTsv> readPsms)
+        public void DetermineTotalPeptideCoverage(Dictionary<string, ProteaseCoverage> proteaseCoverageDict, bool[] peptideCoverage)
         {
-            int startResidue; 
-            int endResidue;
-            foreach(PsmFromTsv peptide in readPsms)
+            bool[][] combinedCoverage = new bool[proteaseCoverageDict.Count][];
+            int column = 0;
+            foreach(ProteaseCoverage proteaseCov in proteaseCoverageDict.Values)
             {
-                startResidue = Int32.Parse(peptide.StartResidueInProtein);
-                endResidue = Int32.Parse(peptide.EndResidueInProtein);
-                for (int i = startResidue - 1; i < endResidue; i++) coverageArray[i] = true;
+                combinedCoverage[column] = proteaseCov.PeptideCoverage;
+                column++;
+            }
+            for (int i = 0; i < peptideCoverage.Length; i++)
+            {
+                for(int j = 0; j < proteaseCoverageDict.Count; j++)
+                {
+                    peptideCoverage[i] = peptideCoverage[i] | combinedCoverage[j][i];
+                }
+            }
+        }
+
+        public void DetermineTotalPepBondCoverage(Dictionary<string, ProteaseCoverage> proteaseCoverageDict, int[] pepBondCoverage)
+        {
+            int[][] combinedCoverage = new int[proteaseCoverageDict.Count][];
+            int column = 0;
+            foreach (ProteaseCoverage proteaseCov in proteaseCoverageDict.Values)
+            {
+                combinedCoverage[column] = proteaseCov.PepBondCoverage;
+                column++;
+            }
+            for (int i = 0; i < pepBondCoverage.Length; i++)
+            {
+                for (int j = 0; j < proteaseCoverageDict.Count; j++)
+                {
+                    pepBondCoverage[i] += combinedCoverage[j][i];
+                }
             }
         }
 
@@ -57,28 +109,33 @@ namespace EngineLayer.SequenceCoverage
             }
         }
 
-        public void DeterminePepBondCoverage(int[] coverageArray, List<PsmFromTsv> readPsms)
+        public void CalculatePercentCoverage()
         {
-            int startResidue;
-            int endResidue;
-            foreach (PsmFromTsv peptide in readPsms)
-            {
-                startResidue = Int32.Parse(peptide.StartResidueInProtein);
-                endResidue = Int32.Parse(peptide.EndResidueInProtein);
-                //N-terminal
-                List<MatchedFragmentIon> nTermFragments = peptide.MatchedIons.Where(x => x.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.N).ToList();
-                //C-terminal in reverse order
-                List<MatchedFragmentIon> cTermFragments = peptide.MatchedIons.Where(x => x.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C).ToList();
+            PepCoveragePercent = (float)100.00 * PeptideCoverage.Count(b => b) / Protein.Length;
+            FragmentCoveragePercent = (float)100.00 * FragmentCoverage.Count(b => b) / Protein.Length;
+        }
 
-                foreach (MatchedFragmentIon ion in nTermFragments)
-                {
-                    coverageArray[startResidue + ion.NeutralTheoreticalProduct.AminoAcidPosition - 2]++;
-                }
-                foreach (MatchedFragmentIon ion in cTermFragments)
-                {
-                    coverageArray[startResidue + ion.NeutralTheoreticalProduct.AminoAcidPosition - 2]++;
-                }
+        public (float, float) CombinatorialCoverage(ProteaseCoverage a, ProteaseCoverage b)
+        {
+            return ( (float)0.0, (float)0.0 );
+        }
+
+        public override string ToString()
+        {
+            return ToString(new Dictionary<string, string>());
+        }
+
+        private string ToString(Dictionary<string, string> CoverageWriter)
+        {
+            CoverageWriter.Add("Protein Accession", Protein.Accession);
+            CoverageWriter.Add("Total Peptide Coverage", PepCoveragePercent.ToString("0.00"));
+            CoverageWriter.Add("Total Fragment Coverage", FragmentCoveragePercent.ToString("0.00"));
+            foreach(ProteaseCoverage proteaseCoverage in ProteaseCoverageDict.Values)
+            {
+                CoverageWriter.Add(proteaseCoverage.Protease + " Peptide Coverage", proteaseCoverage.PepCoveragePercent.ToString("0.00"));
+                CoverageWriter.Add(proteaseCoverage.Protease + " Fragment Coverage", proteaseCoverage.FragmentCoveragePercent.ToString("0.00"));
             }
+            return string.Join("\t", CoverageWriter.Values);
         }
     }
 }

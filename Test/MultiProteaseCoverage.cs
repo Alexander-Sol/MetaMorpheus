@@ -20,11 +20,11 @@ namespace Test
         [Test]
         public static void MultiProteaseTest()
         {
-            string psmFile = @"C:\Users\Alex\Desktop\MutantProteinSP2022\EnterolysinA\ProA_EThcD_Search\Task1-SearchTask\AllPeptides.psmtsv";
+            string psmFile = @"C:\Users\Alex\Desktop\MutantProteinSP2022\EnterolysinA\TriProtease\Task1-SearchTask\AllPeptides.psmtsv";
             string databasePath = @"C:\Users\Alex\Desktop\MutantProteinSP2022\EnterolysinA\EntlA_Mutant.fasta";
 
             DatabaseCoverage dbC = new DatabaseCoverage(databasePath, psmFile);
-
+            dbC.WriteCoverageResults(@"C:\Users\Alex\Desktop\MutantProteinSP2022\EnterolysinA\TriProtease\Task1-SearchTask\");
 
 
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
@@ -56,7 +56,9 @@ namespace Test
 
             
 
-            Assert.AreEqual(2, parsedPsms.Count);
+            Assert.AreEqual(153, parsedPsms.Count);
+
+            // Not a real test, nead to actually write a test for this bad boy
         }
 
     }

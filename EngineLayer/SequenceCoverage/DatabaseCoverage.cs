@@ -15,17 +15,56 @@ namespace EngineLayer.SequenceCoverage
         public List<Protein> ProteinList { get; private set; }
         public List<PsmFromTsv> ReadPsms { get; private set; }
         private Dictionary<Protein, ProteinCoverage> CoverageDictionary { get; set; }
-
+        public List<string> ProteasesPresent { get; set; }
+        public string OutputFolder { get; private set; }
 
         public DatabaseCoverage(string databasePath, string peptidePath)
         {
             ProteinList = LoadProteins(databasePath);
             ReadPsms = PsmTsvReader.ReadTsv(peptidePath, out var warnings);
+            IEnumerable<string> previousAAs = ReadPsms.Select(p => p.PreviousAminoAcid).Distinct();
+            ProteasesPresent = new List<string>();
+            if (previousAAs.Contains("D") | previousAAs.Contains("E")) ProteasesPresent.Add("gluC");
+            if (previousAAs.Contains("P") | previousAAs.Contains("A")) ProteasesPresent.Add("proA");
+            if (previousAAs.Contains("K") | previousAAs.Contains("R")) ProteasesPresent.Add("trypsin");
+
+            CoverageDictionary = new();
             foreach (var protein in ProteinList)
             {
-                var proteinPeptides = ReadPsms.Where(p => p.ProteinAccession.Equals(protein.Accession)).ToList();
+                var proteinPeptides = ReadPsms
+                    .Where(p => p.PEP_QValue < 0.1)
+                    .Where(p => p.ProteinAccession.Equals(protein.Accession))
+                    .ToList();
                 CoverageDictionary.Add(protein, new ProteinCoverage(protein, proteinPeptides));
             }
+        }
+        public void WriteCoverageResults(string outputFolder)
+        {
+            OutputFolder = outputFolder;
+            string outputPath = Path.Combine(outputFolder, @"CoverageResults.tsv");
+            using (var output = new StreamWriter(outputPath))
+            {
+                output.WriteLine(DatabaseCoverage.GetTabSeparatedHeader());
+                foreach (ProteinCoverage protein in CoverageDictionary.Values)
+                {
+                    output.WriteLine(protein.ToString());
+                }
+            }
+        }
+        public static string GetTabSeparatedHeader()
+        {
+            List<string> sb = new();
+            sb.Add("Protein Accesion");
+            sb.Add("Total Peptide Coverage");
+            sb.Add("Total Fragment Coverage");
+            sb.Add("gluC Peptide Coverage");
+            sb.Add("gluC Fragment Coverage");
+            sb.Add("proA Peptide Coverage");
+            sb.Add("proA Fragment Coverage");
+            sb.Add("trypsin Peptide Coverage");
+            sb.Add("trypsin Fragment Coverage");
+            string header = String.Join('\t', sb);
+            return header;
         }
         protected List<Protein> LoadProteins(string databasePath)
         {
