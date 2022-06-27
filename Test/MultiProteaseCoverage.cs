@@ -23,8 +23,20 @@ namespace Test
             string psmFile = @"C:\Users\Alex\Desktop\MutantProteinSP2022\EnterolysinA\TriProtease\Task1-SearchTask\AllPeptides.psmtsv";
             string databasePath = @"C:\Users\Alex\Desktop\MutantProteinSP2022\EnterolysinA\EntlA_Mutant.fasta";
 
+            psmFile = @"C:\Users\Alex\Desktop\MutantProteinSP2022\DXS\Bacillus_DXS\2022-06-27-10-28-21\Task1-SearchTask\AllPeptides.psmtsv";
+            databasePath = @"C:\Users\Alex\Desktop\MutantProteinSP2022\DXS\Bacillus_DXS\BsDXS_Mutant.fasta";
+
+            //psmFile = @"C:\Users\Alex\Desktop\MutantProteinSP2022\DXS\Zymomonas_DXS\2022-06-27-10-20-33\Task1-SearchTask\AllPeptides.psmtsv";
+            //databasePath = @"C:\Users\Alex\Desktop\MutantProteinSP2022\DXS\Zymomonas_DXS\ZmDXS_Mutant.fasta";
+
+            psmFile = @"C:\Users\Alex\Desktop\MutantProteinSP2022\GB2\TriProtease\Task1-SearchTask\AllPeptides.psmtsv";
+            databasePath = @"C:\Users\Alex\Desktop\MutantProteinSP2022\GB2\GB2_Tiny.fasta";
+
+            psmFile = @"C:\Users\Alex\Desktop\MutantProteinSP2022\GB1\TriProtease\Task1-SearchTask\AllPeptides.psmtsv";
+            databasePath = @"C:\Users\Alex\Desktop\MutantProteinSP2022\GB1\GB1_Only.fasta";
+
             DatabaseCoverage dbC = new DatabaseCoverage(databasePath, psmFile);
-            dbC.WriteCoverageResults(@"C:\Users\Alex\Desktop\MutantProteinSP2022\EnterolysinA\TriProtease\Task1-SearchTask\");
+            dbC.WriteCoverageResults(@"C:\Users\Alex\Desktop\MutantProteinSP2022\GB1\");
 
 
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
@@ -56,7 +68,7 @@ namespace Test
 
             
 
-            Assert.AreEqual(153, parsedPsms.Count);
+            //Assert.AreEqual(153, parsedPsms.Count);
 
             // Not a real test, nead to actually write a test for this bad boy
         }
