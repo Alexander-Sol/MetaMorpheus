@@ -32,7 +32,7 @@ namespace EngineLayer.SequenceCoverage
             foreach (var protein in ProteinList)
             {
                 var proteinPeptides = ReadPsms
-                    .Where(p => p.PEP_QValue < 0.1)
+                    .Where(p => p.PEP_QValue < 0.03)
                     .Where(p => p.ProteinAccession.Equals(protein.Accession))
                     .ToList();
                 CoverageDictionary.Add(protein, new ProteinCoverage(protein, proteinPeptides));

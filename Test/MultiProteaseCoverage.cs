@@ -32,11 +32,20 @@ namespace Test
             psmFile = @"C:\Users\Alex\Desktop\MutantProteinSP2022\GB2\TriProtease\Task1-SearchTask\AllPeptides.psmtsv";
             databasePath = @"C:\Users\Alex\Desktop\MutantProteinSP2022\GB2\GB2_Tiny.fasta";
 
-            psmFile = @"C:\Users\Alex\Desktop\MutantProteinSP2022\GB1\TriProtease\Task1-SearchTask\AllPeptides.psmtsv";
-            databasePath = @"C:\Users\Alex\Desktop\MutantProteinSP2022\GB1\GB1_Only.fasta";
+            //psmFile = @"C:\Users\Alex\Desktop\Martell\Apex3_F41V_NoMod\Task1-SearchTask\AllPeptides.psmtsv";
+            //databasePath = @"C:\Users\Alex\Desktop\Martell\Apex3F41V.fasta";
+            //DatabaseCoverage dbC = new DatabaseCoverage(databasePath, psmFile);
+            //dbC.WriteCoverageResults(@"C:\Users\Alex\Desktop\Martell\Apex3_F41V_NoMod\");
 
+            //psmFile = @"C:\Users\Alex\Desktop\Martell\Apex369F\Task1-SearchTask\AllPeptides.psmtsv";
+            //databasePath = @"C:\Users\Alex\Desktop\Martell\Apex369F70G.fasta";
+            //dbC = new DatabaseCoverage(databasePath, psmFile);
+            //dbC.WriteCoverageResults(@"C:\Users\Alex\Desktop\Martell\Apex369F\");
+
+            psmFile = @"C:\Users\Alex\Desktop\Martell\F41V_OpenSearch\Task1-SearchTask\PeptidesWithoutMods.psmtsv";
+            databasePath = @"C:\Users\Alex\Desktop\Martell\Apex3F41V.fasta";
             DatabaseCoverage dbC = new DatabaseCoverage(databasePath, psmFile);
-            dbC.WriteCoverageResults(@"C:\Users\Alex\Desktop\MutantProteinSP2022\GB1\");
+            dbC.WriteCoverageResults(@"C:\Users\Alex\Desktop\Martell\F41V_OpenSearch\");
 
 
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
