@@ -37,15 +37,20 @@ namespace Test
             //DatabaseCoverage dbC = new DatabaseCoverage(databasePath, psmFile);
             //dbC.WriteCoverageResults(@"C:\Users\Alex\Desktop\Martell\Apex3_F41V_NoMod\");
 
-            //psmFile = @"C:\Users\Alex\Desktop\Martell\Apex369F\Task1-SearchTask\AllPeptides.psmtsv";
-            //databasePath = @"C:\Users\Alex\Desktop\Martell\Apex369F70G.fasta";
-            //dbC = new DatabaseCoverage(databasePath, psmFile);
-            //dbC.WriteCoverageResults(@"C:\Users\Alex\Desktop\Martell\Apex369F\");
-
-            psmFile = @"C:\Users\Alex\Desktop\Martell\F41V_OpenSearch\Task1-SearchTask\PeptidesWithoutMods.psmtsv";
-            databasePath = @"C:\Users\Alex\Desktop\Martell\Apex3F41V.fasta";
+            psmFile = @"C:\Users\Alex\Desktop\Martell\Thrombin_Corrected\Task1-SearchTask\AllPeptides.psmtsv";
+            databasePath = @"C:\Users\Alex\Desktop\Martell\Prothrombin.fasta";
             DatabaseCoverage dbC = new DatabaseCoverage(databasePath, psmFile);
-            dbC.WriteCoverageResults(@"C:\Users\Alex\Desktop\Martell\F41V_OpenSearch\");
+            dbC.WriteCoverageResults(@"C:\Users\Alex\Desktop\Martell\Thrombin_Corrected\");
+
+            //psmFile = @"C:\Users\Alex\Desktop\Martell\F41V_OpenSearch\Task1-SearchTask\PeptidesWithoutMods.psmtsv";
+            //databasePath = @"C:\Users\Alex\Desktop\Martell\Apex3F41V.fasta";
+            //DatabaseCoverage dbC = new DatabaseCoverage(databasePath, psmFile);
+            //dbC.WriteCoverageResults(@"C:\Users\Alex\Desktop\Martell\F41V_OpenSearch\");
+
+            //psmFile = @"C:\Users\Alex\Desktop\MutantProteinSP2022\ACR\Multi_Protease\Task1-SearchTask\AllPeptides.psmtsv";
+            //databasePath = @"C:\Users\Alex\Desktop\MutantProteinSP2022\ACR\MA_ACR_only.fasta";
+            //DatabaseCoverage dbC = new DatabaseCoverage(databasePath, psmFile);
+            //dbC.WriteCoverageResults(@"C:\Users\Alex\Desktop\MutantProteinSP2022\ACR\");
 
 
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
