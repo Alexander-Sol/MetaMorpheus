@@ -178,6 +178,12 @@
     <None Update="TestData\MbrAnalysisTest\HumanFastaSlice.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\MbrAnalysisTest\IonQuant\combined_ion.tsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\MbrAnalysisTest\IonQuant\combined_ion_MBR_Modified.tsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\MbrAnalysisTest\K13_02ng_1min_frac1.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

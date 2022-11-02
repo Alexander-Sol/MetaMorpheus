@@ -144,6 +144,10 @@ namespace Test
             Assert.That(matches02ng.Count >= 8);
             Assert.That(expectedMatches.Count >= 3); // FlashLFQ doesn't find all 6 expected peaks, only 3. MbrAnalysis finds these three peaks
 
+            var mbrPeak = postSearchTask.Parameters.FlashLfqResults.Peaks[postSearchTask.Parameters.FlashLfqResults.SpectraFiles[1]].
+                Where(p => p.IsMbrPeak).ToList();
+
+            int placeholder = 0;
             //TODO: Add test for recovering fdrInfo from original. Currently, PsmTsvReader doesn't support the new columns, so it's hard to test
         }
 
