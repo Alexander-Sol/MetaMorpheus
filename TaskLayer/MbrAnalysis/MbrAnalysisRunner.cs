@@ -104,6 +104,7 @@ namespace TaskLayer.MbrAnalysis
                         }
                     }
                 });
+                library.CloseConnections();
             }
 
             if (bestMbrMatches.Any())
@@ -124,6 +125,7 @@ namespace TaskLayer.MbrAnalysis
 
             Directory.CreateDirectory(Path.Join(parameters.OutputFolder, mbrAnalysisFolder));
             WriteMbrPsmResults(bestMbrMatches, parameters);
+            
 
             return new MbrAnalysisResults(bestMbrMatches, parameters.FlashLfqResults);
         }
