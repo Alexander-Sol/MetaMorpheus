@@ -4,7 +4,10 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using Readers;
 using TaskLayer;
+using MsDataFile = MassSpectrometry.MsDataFile;
 
 namespace Test
 {
@@ -15,6 +18,65 @@ namespace Test
         public static void Setup()
         {
             Environment.CurrentDirectory = TestContext.CurrentContext.TestDirectory;
+        }
+
+        [Test]
+        public static void GetIsolationWindows()
+        {
+            List<string> jurkatFiles = new List<string>
+            {
+                @"D:\JurkatTrypsin\Jurkat_Mann11\Jurkat_1\20100614_Velos1_TaGe_SA_Jurkat_6.raw",
+                @"D:\JurkatTrypsin\Jurkat_Mann11\Jurkat_1\20100614_Velos1_TaGe_SA_Jurkat_1.raw",
+                @"D:\JurkatTrypsin\Jurkat_Mann11\Jurkat_1\20100614_Velos1_TaGe_SA_Jurkat_2.raw",
+                @"D:\JurkatTrypsin\Jurkat_Mann11\Jurkat_1\20100614_Velos1_TaGe_SA_Jurkat_3.raw",
+                @"D:\JurkatTrypsin\Jurkat_Mann11\Jurkat_1\20100614_Velos1_TaGe_SA_Jurkat_4.raw",
+                @"D:\JurkatTrypsin\Jurkat_Mann11\Jurkat_1\20100614_Velos1_TaGe_SA_Jurkat_5.raw",
+                @"D:\JurkatTrypsin\Jurkat_Mann11\Jurkat_2\20100730_Velos1_TaGe_SA_Jurkat_01.raw",
+                @"D:\JurkatTrypsin\Jurkat_Mann11\Jurkat_2\20100730_Velos1_TaGe_SA_Jurkat_02.raw",
+                @"D:\JurkatTrypsin\Jurkat_Mann11\Jurkat_2\20100730_Velos1_TaGe_SA_Jurkat_03.raw",
+                @"D:\JurkatTrypsin\Jurkat_Mann11\Jurkat_2\20100730_Velos1_TaGe_SA_Jurkat_04.raw",
+                @"D:\JurkatTrypsin\Jurkat_Mann11\Jurkat_2\20100730_Velos1_TaGe_SA_Jurkat_05.raw",
+                @"D:\JurkatTrypsin\Jurkat_Mann11\Jurkat_2\20100730_Velos1_TaGe_SA_Jurkat_06_100731121305.raw",
+                @"D:\JurkatTrypsin\Jurkat_Mann11\Jurkat_3\20101230_Velos1_TaGe_SA_Jurkat5.raw",
+                @"D:\JurkatTrypsin\Jurkat_Mann11\Jurkat_3\20101230_Velos1_TaGe_SA_Jurkat6.raw",
+                @"D:\JurkatTrypsin\Jurkat_Mann11\Jurkat_3\20101230_Velos1_TaGe_SA_Jurkat1.raw",
+                @"D:\JurkatTrypsin\Jurkat_Mann11\Jurkat_3\20101230_Velos1_TaGe_SA_Jurkat2.raw",
+                @"D:\JurkatTrypsin\Jurkat_Mann11\Jurkat_3\20101230_Velos1_TaGe_SA_Jurkat3.raw",
+                @"D:\JurkatTrypsin\Jurkat_Mann11\Jurkat_3\20101230_Velos1_TaGe_SA_Jurkat4.raw"
+
+            };
+
+            string[] header = new string[]
+            {
+                "File",
+                "FileScan",
+                "Scan Number",
+                "Isolation Center",
+                "Isolation Width"
+            };
+            using StreamWriter writer = new StreamWriter(@"D:\JurkatTrypsin\Jurkat_Mann11\IsolationTable.tsv");
+            writer.WriteLine(String.Join('\t', header));
+
+            foreach (string jurkatFile in jurkatFiles)
+            {
+                MsDataFile dataFile = MsDataFileReader.GetDataFile(jurkatFile);
+                var ms2Scans = dataFile.GetAllScansList().Where(s => s.MsnOrder == 2);
+                string fileName = Path.GetFileName(jurkatFile);
+
+                foreach (var scan in ms2Scans)
+                {
+                    string scanNumber = scan.OneBasedScanNumber.ToString();
+                    string[] scanInfo = new string[]
+                    {
+                        fileName,
+                        fileName + scanNumber,
+                        scanNumber,
+                        scan.IsolationMz.ToString(),
+                        scan.IsolationWidth.ToString()
+                    };
+                    writer.WriteLine(String.Join('\t', scanInfo));
+                }
+            }
         }
 
         [Test]
