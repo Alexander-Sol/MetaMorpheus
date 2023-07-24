@@ -117,6 +117,7 @@ namespace EngineLayer.SpectralRecovery
             AddSpectralRecoveryData(psmDictionary, srPsm);
             PsmTsvWriter.AddPeptideSequenceData(psmDictionary, srPsm, modsToWritePruned);
             PsmTsvWriter.AddMatchedIonsData(psmDictionary, srPsm?.MatchedFragmentIons);
+            AddMS1FeatureData(psmDictionary, srPsm);
             PsmTsvWriter.AddMatchScoreData(psmDictionary, srPsm);
 
             return psmDictionary;
@@ -197,6 +198,27 @@ namespace EngineLayer.SpectralRecovery
                 srPsm?.OriginalSpectralMatch == null
                     ? " "
                     : srPsm.OriginalSpectralMatch.FdrInfo.PEP_QValue.ToString(CultureInfo.InvariantCulture);
+        }
+
+        internal static void AddMS1FeatureData(Dictionary<string, string> psmDictionary,
+            SpectralRecoveryPSM srPsm)
+        {
+            Dictionary<string, string> ms1FeatureDict = srPsm?.AcceptorPeak == null 
+                ? null : 
+                ChromatographicPeak.GetIsotopeInformation(srPsm.AcceptorPeak);
+
+            psmDictionary[ChromatographicPeak.IntensityKey] =
+                ms1FeatureDict == null
+                ? " "
+                : ms1FeatureDict[ChromatographicPeak.IntensityKey];
+            psmDictionary[ChromatographicPeak.MzKey] =
+                ms1FeatureDict == null
+                ? " "
+                : ms1FeatureDict[ChromatographicPeak.MzKey];
+            psmDictionary[ChromatographicPeak.RtKey] =
+                ms1FeatureDict == null
+                ? " "
+                : ms1FeatureDict[ChromatographicPeak.RtKey];
         }
 
         private static double? CalculatePrecursorOffset(SpectralRecoveryPSM srPsm)
