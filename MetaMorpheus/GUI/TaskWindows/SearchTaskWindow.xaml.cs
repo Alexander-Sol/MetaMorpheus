@@ -262,6 +262,8 @@ namespace MetaMorpheusGUI
             PeakFindingToleranceTextBox.Text = task.SearchParameters.QuantifyPpmTol.ToString(CultureInfo.InvariantCulture);
             SpectralRecoveryWidthTextBox.Text = task.SearchParameters.SpectralRecoveryWindowHalfWidth.ToString(CultureInfo.InvariantCulture);
             CheckBoxMatchBetweenRuns.IsChecked = task.SearchParameters.MatchBetweenRuns;
+            CheckBoxCutPeaks.IsChecked = task.SearchParameters.CutPeaks;
+            CheckBoxVerboseQuantOutput.IsChecked = task.SearchParameters.VerboseQuantOutput;
             CheckBoxNormalize.IsChecked = task.SearchParameters.Normalize;
             ModPepsAreUnique.IsChecked = task.SearchParameters.ModPeptidesAreDifferent;
             CheckBoxHistogramAnalysis.IsChecked = task.SearchParameters.DoHistogramAnalysis;
@@ -632,6 +634,8 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.MultiplexModId = (string)MultiplexComboBox.SelectedItem;
             TheTask.SearchParameters.Normalize = CheckBoxNormalize.IsChecked.Value;
             TheTask.SearchParameters.MatchBetweenRuns = CheckBoxMatchBetweenRuns.IsChecked.Value;
+            TheTask.SearchParameters.CutPeaks = CheckBoxCutPeaks.IsChecked.Value;
+            TheTask.SearchParameters.VerboseQuantOutput = CheckBoxVerboseQuantOutput.IsChecked.Value;
             TheTask.SearchParameters.ModPeptidesAreDifferent = ModPepsAreUnique.IsChecked.Value;
             TheTask.SearchParameters.QuantifyPpmTol = double.Parse(PeakFindingToleranceTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.SearchParameters.SpectralRecoveryWindowHalfWidth =
