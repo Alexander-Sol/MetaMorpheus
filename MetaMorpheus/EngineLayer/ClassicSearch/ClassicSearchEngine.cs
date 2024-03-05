@@ -4,6 +4,7 @@ using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -23,6 +24,8 @@ namespace EngineLayer.ClassicSearch
         private readonly Ms2ScanWithSpecificMass[] ArrayOfSortedMS2Scans;
         private readonly double[] MyScanPrecursorMasses;
         private readonly bool WriteSpectralLibrary;
+
+        public ConcurrentDictionary<string, (double targetScore, double decoyScore)> SequenceToScoreTupleDict { get; set; }
 
         public ClassicSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
             List<Modification> variableModifications, List<Modification> fixedModifications, List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel,
@@ -49,7 +52,7 @@ namespace EngineLayer.ClassicSearch
             // we will generate reverse peptide decoys w/ in the code just below this (and calculate spectral angles for them later).
             // we have to generate the reverse peptides instead of the usual reverse proteins because we generate decoy spectral
             // library spectra from their corresponding paired target peptides
-            Proteins = spectralLibrary == null ? proteinList : proteinList.Where(p => !p.IsDecoy).ToList();
+            Proteins =  proteinList.Where(p => !p.IsDecoy).ToList();
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -101,12 +104,8 @@ namespace EngineLayer.ClassicSearch
                         foreach (PeptideWithSetModifications peptide in Proteins[i].Digest(CommonParameters.DigestionParams, FixedModifications, VariableModifications, SilacLabels, TurnoverLabels))
                         {
                             PeptideWithSetModifications reversedOnTheFlyDecoy = null;
-
-                            if (SpectralLibrary != null)
-                            {
-                                int[] newAAlocations = new int[peptide.BaseSequence.Length];
-                                reversedOnTheFlyDecoy = peptide.GetReverseDecoyFromTarget(newAAlocations);
-                            }
+                            int[] newAAlocations = new int[peptide.BaseSequence.Length];
+                            reversedOnTheFlyDecoy = peptide.GetReverseDecoyFromTarget(newAAlocations);
 
                             // clear fragments from the last peptide
                             foreach (var fragmentSet in targetFragmentsForEachDissociationType)
@@ -121,31 +120,33 @@ namespace EngineLayer.ClassicSearch
                                 var dissociationType = CommonParameters.DissociationType == DissociationType.Autodetect ?
                                     scan.TheScan.TheScan.DissociationType.Value : CommonParameters.DissociationType;
 
-                                if (!targetFragmentsForEachDissociationType.TryGetValue(dissociationType, out var peptideTheorProducts))
+                                if (!targetFragmentsForEachDissociationType.TryGetValue(dissociationType, out var targetTheorProducts))
                                 {
                                     //TODO: print some kind of warning here. the scan header dissociation type was unknown
                                     continue;
                                 }
+                                List<Product> decoyTheorProducts = decoyFragmentsForEachDissociationType[dissociationType];
 
-                                // check if we've already generated theoretical fragments for this peptide+dissociation type
-                                if (peptideTheorProducts.Count == 0)
+                                // check if we've already generated fragments for this peptide+dissociation type
+                                if (targetTheorProducts.Count == 0)
                                 {
-                                    peptide.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
+                                    peptide.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, targetTheorProducts);
+                                    reversedOnTheFlyDecoy.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, decoyTheorProducts);
                                 }
 
-                                // match theoretical target ions to spectrum
-                                List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan, peptideTheorProducts, CommonParameters,
+                                // match theoretical target + decoy ions to spectrum
+                                List<MatchedFragmentIon> matchedTargetIons = MatchFragmentIons(scan.TheScan, targetTheorProducts, CommonParameters,
+                                        matchAllCharges: WriteSpectralLibrary);
+                                List<MatchedFragmentIon> matchedDecoyIons = MatchFragmentIons(scan.TheScan, decoyTheorProducts, CommonParameters,
                                         matchAllCharges: WriteSpectralLibrary);
 
                                 // calculate the peptide's score
-                                double thisScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedIons, fragmentsCanHaveDifferentCharges: WriteSpectralLibrary);
+                                double targetScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedTargetIons, fragmentsCanHaveDifferentCharges: WriteSpectralLibrary);
+                                double decoyScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedDecoyIons, fragmentsCanHaveDifferentCharges: WriteSpectralLibrary);
 
-                                AddPeptideCandidateToPsm(scan, myLocks, thisScore, peptide, matchedIons);
-
-                                if (SpectralLibrary != null)
-                                {
-                                    DecoyScoreForSpectralLibrarySearch(scan, reversedOnTheFlyDecoy, decoyFragmentsForEachDissociationType, dissociationType, myLocks);
-                                }
+                                AddPeptideCandidateToPsm(scan, myLocks, targetScore, peptide, matchedTargetIons);
+                                AddPeptideCandidateToPsm(scan, myLocks, decoyScore, reversedOnTheFlyDecoy, matchedDecoyIons);
+                                UpdatePeptideTargetDecoyScoreDict(peptide, targetScore, decoyScore);
                             }
                         }
 
@@ -170,23 +171,23 @@ namespace EngineLayer.ClassicSearch
             return new MetaMorpheusEngineResults(this);
         }
 
-        private void DecoyScoreForSpectralLibrarySearch(ScanWithIndexAndNotchInfo scan, PeptideWithSetModifications reversedOnTheFlyDecoy, Dictionary<DissociationType, List<Product>> decoyFragmentsForEachDissociationType, DissociationType dissociationType, object[] myLocks)
+        public void UpdatePeptideTargetDecoyScoreDict(PeptideWithSetModifications pwsm, double targetScore, double decoyScore)
         {
-            // match decoy ions for decoy-on-the-fly
-            var decoyTheoreticalFragments = decoyFragmentsForEachDissociationType[dissociationType];
-
-            if (decoyTheoreticalFragments.Count == 0)
+            if(SequenceToScoreTupleDict.TryGetValue(pwsm.FullSequence, out var scoreTuple))
             {
-                reversedOnTheFlyDecoy.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, decoyTheoreticalFragments);
+                if(targetScore > scoreTuple.targetScore)
+                {
+                    scoreTuple.targetScore = targetScore;
+                }
+                if(decoyScore > scoreTuple.decoyScore)
+                {
+                    scoreTuple.decoyScore = decoyScore;
+                }
             }
-
-            var decoyMatchedIons = MatchFragmentIons(scan.TheScan, decoyTheoreticalFragments, CommonParameters,
-                matchAllCharges: WriteSpectralLibrary);
-
-            // calculate decoy's score
-            var decoyScore = CalculatePeptideScore(scan.TheScan.TheScan, decoyMatchedIons, fragmentsCanHaveDifferentCharges: WriteSpectralLibrary);
-
-            AddPeptideCandidateToPsm(scan, myLocks, decoyScore, reversedOnTheFlyDecoy, decoyMatchedIons);
+            else
+            {
+                SequenceToScoreTupleDict.TryAdd(pwsm.FullSequence, (targetScore, decoyScore));
+            }
         }
 
         private void AddPeptideCandidateToPsm(ScanWithIndexAndNotchInfo scan, object[] myLocks, double thisScore, PeptideWithSetModifications peptide, List<MatchedFragmentIon> matchedIons)
