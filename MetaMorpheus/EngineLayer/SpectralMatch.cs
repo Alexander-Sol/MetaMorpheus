@@ -153,6 +153,7 @@ namespace EngineLayer
             {
                 BioPolymersWithSetModsToMatchingFragments.Remove(pwsm);
             }
+            if (!_BestMatchingBioPolymersWithSetMods.Any()) return;
             this.ResolveAllAmbiguities();
         }
 
