@@ -183,7 +183,7 @@ namespace Test
             SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             bool writeSpectralLibrary = false;
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
-                proteinList, searchModes, commonParameters,null, sl, new List<string>(), writeSpectralLibrary).Run();
+                proteinList, searchModes, commonParameters,null, null, new List<string>(), writeSpectralLibrary).Run();
              
             // Single search mode
             Assert.AreEqual(7, allPsmsArray.Length);
@@ -225,7 +225,7 @@ namespace Test
             SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             bool writeSpectralLibrary = false;
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
-                proteinList, searchModes, commonParameters, null, sl, new List<string>(), writeSpectralLibrary).Run();
+                proteinList, searchModes, commonParameters, null, null, new List<string>(), writeSpectralLibrary).Run();
 
             // Single search mode
             Assert.AreEqual(7, allPsmsArray.Length);

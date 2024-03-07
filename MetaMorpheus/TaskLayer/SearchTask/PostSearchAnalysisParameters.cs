@@ -28,5 +28,6 @@ namespace TaskLayer
         public List<DbForTask> DatabaseFilenameList { get; set; }
         public List<string> CurrentRawFileList { get; set; }
         public SpectralLibrary SpectralLibrary { get; set; }
+        public IDictionary<string, double> SequenceToScoreDict { get; set; }
     }
 }

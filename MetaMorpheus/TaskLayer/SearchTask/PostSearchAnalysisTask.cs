@@ -1312,6 +1312,19 @@ namespace TaskLayer
             }
         }
 
+        internal bool TargetDecoyCompetitionWinner(PeptideWithSetModifications pwsm)
+        {
+            if(Parameters.SequenceToScoreDict.TryGetValue(pwsm.FullSequence, out double peptideScore))
+            {
+                if (Parameters.SequenceToScoreDict.TryGetValue(pwsm.PairedTargetDecoySequence, out double reverseScore))
+                {
+                    return peptideScore > reverseScore;
+                }
+                return true; //Return true if the pwsm doesn't have a decoy in the dict
+            }
+            return false;
+        }
+
         private void WritePeptideResults()
         {
             Status("Writing peptide results...", Parameters.SearchTaskId);
@@ -1319,17 +1332,43 @@ namespace TaskLayer
             // write best (highest-scoring) PSM per peptide
             string filename = "All" + GlobalVariables.AnalyteType + "s.psmtsv";
             string writtenFile = Path.Combine(Parameters.OutputFolder, filename);
-            List<SpectralMatch> peptides = Parameters.AllPsms
+            List<SpectralMatch> spectralMatches = Parameters.AllPsms
                 .GroupBy(b => b.FullSequence)
                 .Select(b => b.FirstOrDefault()).ToList();
 
-            new FdrAnalysisEngine(peptides, Parameters.NumNotches, CommonParameters,
+            // A list of all pwsms that won their target/decoy score competition
+            // If a given full sequence is true, it is kept. If it is false, it lost the competition and is discarded
+            Dictionary<string, bool> retainSequenceDictionary = new();
+
+            foreach(var biopolymer in spectralMatches.SelectMany(psm => psm.BestMatchingBioPolymersWithSetMods.Select(tuple => tuple.Peptide)))
+            {
+                PeptideWithSetModifications pwsm = biopolymer as PeptideWithSetModifications;
+                if(pwsm != null)
+                {
+                    retainSequenceDictionary.TryAdd(pwsm.FullSequence, TargetDecoyCompetitionWinner(pwsm));
+                }
+            }
+
+            foreach(var match in spectralMatches)
+            {
+                var notchPwsmList = match.BestMatchingBioPolymersWithSetMods.ToList();
+                for (int i = 0; i < notchPwsmList.Count; i++)
+                {
+                    if (retainSequenceDictionary.TryGetValue(notchPwsmList[i].Peptide.FullSequence, out bool retain) && !retain)
+                    {
+                        match.RemoveThisAmbiguousPeptide(notchPwsmList[i].Notch, notchPwsmList[i].Peptide);
+                    }
+                }
+            }
+            
+
+            new FdrAnalysisEngine(spectralMatches, Parameters.NumNotches, CommonParameters,
                 FileSpecificParameters, new List<string> { Parameters.SearchTaskId },
                 "Peptide").Run();
 
-            FilterSpecificPsms(peptides, out int psmOrPeptideCountForResults);
+            FilterSpecificPsms(spectralMatches, out int psmOrPeptideCountForResults);
 
-            WritePsmsToTsv(peptides, writtenFile);
+            WritePsmsToTsv(spectralMatches, writtenFile);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText(
