@@ -1316,17 +1316,49 @@ namespace TaskLayer
             // write best (highest-scoring) PSM per peptide
             string filename = "All" + GlobalVariables.AnalyteType + "s.psmtsv";
             string writtenFile = Path.Combine(Parameters.OutputFolder, filename);
-            List<PeptideSpectralMatch> peptides = Parameters.AllPsms
-                .GroupBy(b => b.FullSequence)
-                .Select(b => b.FirstOrDefault()).ToList();
 
-            new FdrAnalysisEngine(peptides, Parameters.NumNotches, CommonParameters,
+            // Peptide level target-decoy competion happens here
+            // for more information, please see: doi.org/10.1021/acs.jproteome.2c00282
+            List<PeptideSpectralMatch> postCompetitionPeptides = new();
+            foreach (PeptideSpectralMatch psm in Parameters.AllPsms
+                .Where(b => b.FullSequence != null)
+                .GroupBy(b => b.FullSequence)
+                .Select(b => b.FirstOrDefault()).ToList())
+            {
+                string lookupSequence = psm.FullSequence;
+                if (psm.IsDecoy)
+                {
+                    int[] newAAlocations = new int[psm.BaseSequence.Length];
+                    var reversedOnTheFlyDecoy = psm.BestMatchingPeptides.First().Peptide.GetReverseDecoyFromTarget(newAAlocations);
+                    lookupSequence = reversedOnTheFlyDecoy.FullSequence; // Maybe not the best way to do this but....
+                }
+
+                if (Parameters.SequenceToScoreTupleDict.TryGetValue(lookupSequence, out var scoreTuple))
+                {
+                    // If the targetScore is higher and the psm corresponds to a target peptides, the peptide is retained
+                    if(scoreTuple.targetScore > scoreTuple.decoyScore)
+                    {
+                        if (!psm.IsDecoy) postCompetitionPeptides.Add(psm);
+                    }
+                    // Conversely, if the decoy score is higher and the psm corresponds to a DECOY peptide, keep the decoy peptide
+                    else 
+                    {
+                        if (psm.IsDecoy) postCompetitionPeptides.Add(psm);
+                    }
+                }
+                else
+                {
+                    postCompetitionPeptides.Add(psm);
+                }
+            }
+
+            new FdrAnalysisEngine(postCompetitionPeptides, Parameters.NumNotches, CommonParameters,
                 FileSpecificParameters, new List<string> { Parameters.SearchTaskId },
                 "Peptide").Run();
 
-            FilterSpecificPsms(peptides, out int psmOrPeptideCountForResults);
+            FilterSpecificPsms(postCompetitionPeptides, out int psmOrPeptideCountForResults);
 
-            WritePsmsToTsv(peptides, writtenFile);
+            WritePsmsToTsv(postCompetitionPeptides, writtenFile);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText(
@@ -1338,6 +1370,7 @@ namespace TaskLayer
                 // write summary text
                 var psmsForThisFile = file.ToList();
                 string strippedFileName = Path.GetFileNameWithoutExtension(file.First().FullFilePath);
+                //TODO: At some point, we should do peptide-level competition on a file-by-file basis. 
                 var peptidesForFile = psmsForThisFile
                     .GroupBy(b => b.FullSequence)
                     .Select(b => b.FirstOrDefault())

@@ -273,7 +273,7 @@ namespace Test
             //test when doing spectral library search without generating library
             PeptideSpectralMatch[] allPsmsArray1 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray1, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
-                proteinList, searchMode, CommonParameters, null, testLibrary, new List<string>(), false).Run();
+                proteinList, searchMode, CommonParameters, null, null, new List<string>(), false).Run();
             var psm1 = allPsmsArray1.Where(p => p != null).ToList();
             Assert.That(psm1[0].IsDecoy == false && psm1[0].FullSequence == "DITANLR");
             Assert.That(psm1[1].IsDecoy == true && psm1[1].FullSequence == "LSISNVAK");
@@ -288,7 +288,7 @@ namespace Test
             //test when doing spectral library search with generating library; non spectral search won't generate decoy by "decoy on the fly" , so proteinlist used by non spectral library search would contain decoys
             PeptideSpectralMatch[] allPsmsArray2 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
-                proteinList, searchMode, CommonParameters, null, testLibrary, new List<string>(), true).Run();
+                proteinList, searchMode, CommonParameters, null, null, new List<string>(), true).Run();
             var psm2 = allPsmsArray2.Where(p => p != null).ToList();
             Assert.That(psm2[0].IsDecoy == false && psm2[0].FullSequence == "DITANLR");
             Assert.That(psm2[1].IsDecoy == true && psm2[1].FullSequence == "LSISNVAK");

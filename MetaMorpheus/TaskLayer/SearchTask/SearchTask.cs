@@ -11,6 +11,7 @@ using Proteomics.AminoAcidPolymer;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -137,6 +138,7 @@ namespace TaskLayer
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // load proteins
+            // change to hard-coded DecoyType = None?
             List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModificationTypes, CommonParameters);
             SanitizeProteinDatabase(proteinList, SearchParameters.TCAmbiguity);
 
@@ -189,6 +191,7 @@ namespace TaskLayer
             Status("Searching files...", new List<string> { taskId, "Individual Spectra Files" });
 
             Dictionary<string, int[]> numMs2SpectraPerFile = new Dictionary<string, int[]>();
+            ConcurrentDictionary<string, double> sequenceToScoreDict = new();
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
                 if (GlobalVariables.StopLoops) { break; }
@@ -212,6 +215,7 @@ namespace TaskLayer
                 myFileManager.DoneWithFile(origDataFile);
 
                 PeptideSpectralMatch[] fileSpecificPsms = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
+                
 
                 // modern search
                 if (SearchParameters.SearchType == SearchType.Modern)
@@ -334,7 +338,7 @@ namespace TaskLayer
                 {
                     Status("Starting search...", thisId);
                     var newClassicSearchEngine = new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, SearchParameters.SilacLabels,
-                       SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, proteinList, massDiffAcceptor, combinedParams, this.FileSpecificParameters, spectralLibrary, thisId,SearchParameters.WriteSpectralLibrary);
+                       SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, proteinList, massDiffAcceptor, combinedParams, this.FileSpecificParameters, sequenceToScoreDict, thisId,SearchParameters.WriteSpectralLibrary);
                     newClassicSearchEngine.Run();
 
                     ReportProgress(new ProgressEventArgs(100, "Done with search!", thisId));
@@ -396,7 +400,8 @@ namespace TaskLayer
                 FileSettingsList = fileSettingsList,
                 NumMs2SpectraPerFile = numMs2SpectraPerFile,
                 DatabaseFilenameList = dbFilenameList,
-                SpectralLibrary = spectralLibrary
+                SpectralLibrary = spectralLibrary,
+                SequenceToScoreDict = sequenceToScoreDict
             };
             PostSearchAnalysisTask postProcessing = new PostSearchAnalysisTask
             {
