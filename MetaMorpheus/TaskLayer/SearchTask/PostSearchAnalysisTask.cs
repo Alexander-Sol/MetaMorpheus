@@ -1361,7 +1361,7 @@ namespace TaskLayer
                         }
                     }
                 }
-                spectralMatches.RemoveAll(match => match.NumDifferentMatchingPeptides == 1);
+                spectralMatches.RemoveAll(match => match.NumDifferentMatchingPeptides == 0);
             }
             
             new FdrAnalysisEngine(spectralMatches, Parameters.NumNotches, CommonParameters,
