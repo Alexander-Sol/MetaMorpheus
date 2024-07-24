@@ -856,7 +856,6 @@ namespace TaskLayer
             var psmsGroupedByFile = Filter(Parameters.AllPsms,
                 includeDecoys: true,
                 includeContaminants: true,
-                includeAmbiguous: true,
                 includeHighQValuePsms: false).Psms.GroupBy(f => f.FullFilePath);
 
             //if we're writing individual files, we need to reprocess the psms
@@ -864,7 +863,8 @@ namespace TaskLayer
             //then we need to update the psms (which were found in the data file that has the "unlabeled" named) and say they were found in the "heavy" file)
             if (Parameters.SearchParameters.SilacLabels != null) //if we have silac labels
             {
-                //get the original filenames
+                // If we're running silac, we need to overwrite the filtered psms with all psms
+                psmsGroupedByFile = Parameters.AllPsms.GroupBy(f => f.FullFilePath);
                 List<string> fileNamesThatHadPsms = psmsGroupedByFile.Select(v => v.Key).ToList();
                 EngineLayer.ProteinGroup firstProteinGroup = ProteinGroups.FirstOrDefault(); //grab the first protein to extract the files used for quantification
                 if (firstProteinGroup != null) //check that we even have a protein group to write
