@@ -26,6 +26,11 @@ namespace Test
             string subFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"IndividualOutputTest");
             Directory.CreateDirectory(subFolder);
             string outputFolder = Path.Combine(subFolder, "Results");
+
+            // Clean up the results from previous tests
+            if(Directory.Exists(outputFolder))
+                Directory.Delete(outputFolder, true);
+
             SearchTask allowFilesTask = new SearchTask();
             allowFilesTask.SearchParameters.WriteIndividualFiles = true;
             allowFilesTask.SearchParameters.CompressIndividualFiles = false;
