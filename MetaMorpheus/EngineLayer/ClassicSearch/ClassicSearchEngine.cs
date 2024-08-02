@@ -57,7 +57,7 @@ namespace EngineLayer.ClassicSearch
         {
             Status("Getting ms2 scans...");
 
-            double proteinsSearched = 0;
+            double peptidesSearched = 0;
             int oldPercentProgress = 0;
 
             // one lock for each MS2 scan; a scan can only be accessed by one thread at a time
@@ -82,30 +82,35 @@ namespace EngineLayer.ClassicSearch
 
                 // Build a hashset of target peptide sequences so we can check for intersection with decoy peptides
                 HashSet<string> targetPeptideSequences = new(targetPeptides.Select(p => p.FullSequence));
-
-
                 List<PeptideWithSetModifications> decoyPeptides = new();
-                foreach (var protein in Proteins.Where(p => !p.IsDecoy))
+
+                // If we have a spectral library, we generate decoys within the parallel loop
+                // Otherwise, do it here
+                if (SpectralLibrary == null)
                 {
-                    foreach(var peptide in protein.Digest(CommonParameters.DigestionParams, FixedModifications, VariableModifications, SilacLabels, TurnoverLabels))
+                    foreach (var protein in Proteins.Where(p => !p.IsDecoy))
                     {
-                        int[] newAAlocations = new int[peptide.BaseSequence.Length];
-
-                        // This method generates a new protein object for each decoy, which is less than ideal. 
-                        var decoyPeptide = peptide.GetReverseDecoyFromTarget(newAAlocations);
-
-                        // For each decoy, ensure that it is not homologous to any target peptide
-                        int decoyGenerationAttempts = 0;
-                        while (targetPeptideSequences.Contains(decoyPeptide.FullSequence) && decoyGenerationAttempts <= 3)
+                        foreach (var peptide in protein.Digest(CommonParameters.DigestionParams, FixedModifications, VariableModifications, SilacLabels, TurnoverLabels))
                         {
+                            int[] newAAlocations = new int[peptide.BaseSequence.Length];
+
                             // This method generates a new protein object for each decoy, which is less than ideal. 
-                            decoyPeptide.GetScrambledDecoyFromTarget(newAAlocations);
+                            var decoyPeptide = peptide.GetReverseDecoyFromTarget(newAAlocations);
+
+                            // For each decoy, ensure that it is not homologous to any target peptide
+                            int decoyGenerationAttempts = 0;
+                            while (targetPeptideSequences.Contains(decoyPeptide.FullSequence) && decoyGenerationAttempts <= 3)
+                            {
+                                // This method generates a new protein object for each decoy, which is less than ideal. 
+                                decoyPeptide = peptide.GetScrambledDecoyFromTarget(newAAlocations);
+                                decoyGenerationAttempts++;
+                            }
+                            // We weren't able to get a non-homologous decoy after three attempts, and we just give up
+                            decoyPeptides.Add(decoyPeptide); //otherwise, add the decoy peptide                       
                         }
-                        // We weren't able to get a non-homologous decoy after three attempts, and we just give up
-                        decoyPeptides.Add(decoyPeptide); //otherwise, add the decoy peptide                       
                     }
                 }
-
+                
                 List<PeptideWithSetModifications> peptidesForSearch = targetPeptides.Concat(decoyPeptides).ToList();
 
                 #endregion
@@ -175,14 +180,15 @@ namespace EngineLayer.ClassicSearch
 
                             if (SpectralLibrary != null)
                             {
+                                int[] newAAlocations = new int[peptide.BaseSequence.Length];
+                                var reversedOnTheFlyDecoy = peptide.GetReverseDecoyFromTarget(newAAlocations);
                                 DecoyScoreForSpectralLibrarySearch(scan, reversedOnTheFlyDecoy, decoyFragmentsForEachDissociationType, dissociationType, myLocks);
                             }
                         }
-                            
 
                         // report search progress (proteins searched so far out of total proteins in database)
-                        proteinsSearched++;
-                        var percentProgress = (int)((proteinsSearched / Proteins.Count) * 100);
+                        peptidesSearched++;
+                        var percentProgress = (int)((peptidesSearched / peptidesForSearch.Count) * 100);
 
                         if (percentProgress > oldPercentProgress)
                         {
