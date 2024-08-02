@@ -71,6 +71,45 @@ namespace EngineLayer.ClassicSearch
 
             if (Proteins.Any())
             {
+                #region Generating peptides from proteins
+
+                // Get target peptides
+                List<PeptideWithSetModifications> targetPeptides = new();
+                foreach(var protein in Proteins.Where(p => !p.IsDecoy))
+                {
+                    targetPeptides.AddRange(protein.Digest(CommonParameters.DigestionParams, FixedModifications, VariableModifications, SilacLabels, TurnoverLabels));
+                }
+
+                // Build a hashset of target peptide sequences so we can check for intersection with decoy peptides
+                HashSet<string> targetPeptideSequences = new(targetPeptides.Select(p => p.FullSequence));
+
+
+                List<PeptideWithSetModifications> decoyPeptides = new();
+                foreach (var protein in Proteins.Where(p => !p.IsDecoy))
+                {
+                    foreach(var peptide in protein.Digest(CommonParameters.DigestionParams, FixedModifications, VariableModifications, SilacLabels, TurnoverLabels))
+                    {
+                        int[] newAAlocations = new int[peptide.BaseSequence.Length];
+
+                        // This method generates a new protein object for each decoy, which is less than ideal. 
+                        var decoyPeptide = peptide.GetReverseDecoyFromTarget(newAAlocations);
+
+                        // For each decoy, ensure that it is not homologous to any target peptide
+                        int decoyGenerationAttempts = 0;
+                        while (targetPeptideSequences.Contains(decoyPeptide.FullSequence) && decoyGenerationAttempts <= 3)
+                        {
+                            // This method generates a new protein object for each decoy, which is less than ideal. 
+                            decoyPeptide.GetScrambledDecoyFromTarget(newAAlocations);
+                        }
+                        // We weren't able to get a non-homologous decoy after three attempts, and we just give up
+                        decoyPeptides.Add(decoyPeptide); //otherwise, add the decoy peptide                       
+                    }
+                }
+
+                List<PeptideWithSetModifications> peptidesForSearch = targetPeptides.Concat(decoyPeptides).ToList();
+
+                #endregion
+
                 int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
                 int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
                 Parallel.ForEach(threads, (i) =>
@@ -93,62 +132,53 @@ namespace EngineLayer.ClassicSearch
                         decoyFragmentsForEachDissociationType.Add(CommonParameters.DissociationType, new List<Product>());
                     }
 
-                    for (; i < Proteins.Count; i += maxThreadsPerFile)
+                    for (; i < peptidesForSearch.Count; i += maxThreadsPerFile)
                     {
                         // Stop loop if canceled
                         if (GlobalVariables.StopLoops) { return; }
 
-                        // digest each protein into peptides and search for each peptide in all spectra within precursor mass tolerance
-                        foreach (PeptideWithSetModifications peptide in Proteins[i].Digest(CommonParameters.DigestionParams, FixedModifications, VariableModifications, SilacLabels, TurnoverLabels))
+                        PeptideWithSetModifications peptide = peptidesForSearch[i];
+
+                        // clear fragments from the last peptide
+                        foreach (var fragmentSet in targetFragmentsForEachDissociationType)
                         {
-                            PeptideWithSetModifications reversedOnTheFlyDecoy = null;
+                            fragmentSet.Value.Clear();
+                            decoyFragmentsForEachDissociationType[fragmentSet.Key].Clear();
+                        }
+
+                        // score each scan that has an acceptable precursor mass
+                        foreach (ScanWithIndexAndNotchInfo scan in GetAcceptableScans(peptide.MonoisotopicMass, SearchMode))
+                        {
+                            var dissociationType = CommonParameters.DissociationType == DissociationType.Autodetect ?
+                                scan.TheScan.TheScan.DissociationType.Value : CommonParameters.DissociationType;
+
+                            if (!targetFragmentsForEachDissociationType.TryGetValue(dissociationType, out var peptideTheorProducts))
+                            {
+                                //TODO: print some kind of warning here. the scan header dissociation type was unknown
+                                continue;
+                            }
+
+                            // check if we've already generated theoretical fragments for this peptide+dissociation type
+                            if (peptideTheorProducts.Count == 0)
+                            {
+                                peptide.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
+                            }
+
+                            // match theoretical target ions to spectrum
+                            List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan, peptideTheorProducts, CommonParameters,
+                                    matchAllCharges: WriteSpectralLibrary);
+
+                            // calculate the peptide's score
+                            double thisScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedIons, fragmentsCanHaveDifferentCharges: WriteSpectralLibrary);
+
+                            AddPeptideCandidateToPsm(scan, myLocks, thisScore, peptide, matchedIons);
 
                             if (SpectralLibrary != null)
                             {
-                                int[] newAAlocations = new int[peptide.BaseSequence.Length];
-                                reversedOnTheFlyDecoy = peptide.GetReverseDecoyFromTarget(newAAlocations);
-                            }
-
-                            // clear fragments from the last peptide
-                            foreach (var fragmentSet in targetFragmentsForEachDissociationType)
-                            {
-                                fragmentSet.Value.Clear();
-                                decoyFragmentsForEachDissociationType[fragmentSet.Key].Clear();
-                            }
-
-                            // score each scan that has an acceptable precursor mass
-                            foreach (ScanWithIndexAndNotchInfo scan in GetAcceptableScans(peptide.MonoisotopicMass, SearchMode))
-                            {
-                                var dissociationType = CommonParameters.DissociationType == DissociationType.Autodetect ?
-                                    scan.TheScan.TheScan.DissociationType.Value : CommonParameters.DissociationType;
-
-                                if (!targetFragmentsForEachDissociationType.TryGetValue(dissociationType, out var peptideTheorProducts))
-                                {
-                                    //TODO: print some kind of warning here. the scan header dissociation type was unknown
-                                    continue;
-                                }
-
-                                // check if we've already generated theoretical fragments for this peptide+dissociation type
-                                if (peptideTheorProducts.Count == 0)
-                                {
-                                    peptide.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
-                                }
-
-                                // match theoretical target ions to spectrum
-                                List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan, peptideTheorProducts, CommonParameters,
-                                        matchAllCharges: WriteSpectralLibrary);
-
-                                // calculate the peptide's score
-                                double thisScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedIons, fragmentsCanHaveDifferentCharges: WriteSpectralLibrary);
-
-                                AddPeptideCandidateToPsm(scan, myLocks, thisScore, peptide, matchedIons);
-
-                                if (SpectralLibrary != null)
-                                {
-                                    DecoyScoreForSpectralLibrarySearch(scan, reversedOnTheFlyDecoy, decoyFragmentsForEachDissociationType, dissociationType, myLocks);
-                                }
+                                DecoyScoreForSpectralLibrarySearch(scan, reversedOnTheFlyDecoy, decoyFragmentsForEachDissociationType, dissociationType, myLocks);
                             }
                         }
+                            
 
                         // report search progress (proteins searched so far out of total proteins in database)
                         proteinsSearched++;
