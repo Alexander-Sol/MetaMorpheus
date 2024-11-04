@@ -74,7 +74,7 @@ namespace EngineLayer.FdrAnalysis
                 if (psms.Count > 100 & DoPEP)
                 {
                     CalculateQValue(psms, peptideLevelCalculation: false, pepCalculation: false);
-                    if (peptides.Count > 100 )
+                    if (peptides.Count > 100)
                     {
                         CalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: false);
 
@@ -108,13 +108,16 @@ namespace EngineLayer.FdrAnalysis
                     // but we do want to calculate pep q-values
                     // really, in this case, we only need to run one or the other (i.e., only peptides or psms are passed in)
                     // but there's no mechanism to pass that info to the FDR analysis engine, so we'll do this for now
-                    peptides = psms
-                            .OrderBy(p => p.FdrInfo.PEP)
-                            .ThenByDescending(p => p)
-                            .GroupBy(p => p.FullSequence)
-                            .Select(p => p.FirstOrDefault()) // Get the best psm for each peptide based on PEP (default comparer is used to break ties)
-                            .ToList();
-                    CalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: true);
+                    if (peptides.Count > 100)
+                    {
+                        peptides = psms
+                                .OrderBy(p => p.FdrInfo.PEP)
+                                .ThenByDescending(p => p)
+                                .GroupBy(p => p.FullSequence)
+                                .Select(p => p.FirstOrDefault()) // Get the best psm for each peptide based on PEP (default comparer is used to break ties)
+                                .ToList();
+                        CalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: true);
+                    }
 
                     psms = psms
                         .OrderBy(p => p.FdrInfo.PEP)
